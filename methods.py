@@ -13,20 +13,23 @@ def create_chat_list(path='./data/nacho_gleb_original.txt'):
         chat = chat.split('\n')[:len(chat.split('\n'))-1]
     return chat
 
-
+# I should add a function that indentifies european vs american calendar dates
+# Also another function that identifies 24h format vs am,pm
 def clean_chat_list(chat_list):
     """Unifies messages that are split by \n incorrectly"""
     
     clean_chat_list = []
     clean_counter = -1
+
+## TRY WITH REGEX: re.split(r'\d\d?/\d\d?/\d\d\s\d\d?:\d\d?\s-\s', chat_test[0])
+## re.findall(r'\d\d?/\d\d?/\d\d\s\d\d?:\d\d?', chat_test[i])
     
     for i in chat_list:
         try:
             if (datetime.strptime(i.split(' - ')[0], '%d/%m/%y %H:%M') and \
                 i.split(' - ')[1].split(':')[1]):
                     clean_chat_list.append(i)
-                    clean_counter += 1
-                
+                    clean_counter += 1       
             else:
                 clean_chat_list[clean_counter] = \
                 clean_chat_list[clean_counter] + ' ' + i
@@ -54,6 +57,7 @@ def chat_to_df(chat):
     
     assert len(times) == len(user) == len(message)
     
+    #times = pd.to_datetime(times)
     times = pd.to_datetime(times)
     
     dataframe_chat = {
@@ -73,6 +77,9 @@ def chat_to_df(chat):
     df['hour'] = df.index.hour
     df['minute'] = df.index.minute
     df['emoji_count'] = df.loc[:,'message'].apply(lambda x: emoji_counter(x))
+    df['media'] = df.message.apply(lambda x: '<Multimedia omitido>' in x or \
+                                   '<Media omitted>' in x).astype(int)
+    df['words_count'] = df.message.apply(lambda x: len(x.split(' ')))
     
     return df
 
@@ -125,11 +132,97 @@ def longest_word(msg):
     return word
 
 
+# Creating Statistics for first page
+
+
+def number_msgs(df):
+    """ Gives table with the information of the total number of messages and words by user"""
+    
+    # Counting total messages
+    
+    df1 = pd.DataFrame(
+        df.groupby('user').count().iloc[:,0:1],
+    )
+    
+    total_messages = df1.iloc[:,0].sum()
+        
+    df1['% Total Messages'] = round(df1.iloc[:,0]/total_messages*100, 2)
+    
+    df1.columns = ['Total Messages', '% Total Messages']
+    
+    # Counting total words
+    
+    df2 = pd.DataFrame(df.groupby('user').words_count.sum())
+    
+    total_words = df2.sum()[0]
+    
+    df2['% Total words'] = round(df2.iloc[:,0]/total_words*100, 2)
+    
+    df2.columns = ['Total Words', '% Total words']    
+
+    return pd.concat([df1, df2], axis=1)
+
+
 def longest_word_user(df):
     
     users = df.user.unique()
+    
+    df = pd.DataFrame(
+     {user : longest_word(df[df.user == user].message) for user in users}.values(),
+     df.groupby('user').size().index    
+    )
+    
+    df.columns = ['Longest word']
 
-    return {
-    user : longest_word(df[df.user == user].message) for user in users
+    return df
+
+
+def most_words(df):
+    
+    users = df.user.unique()
+    
+    most_words = {
+        user : str(df[df.user == user].resample('d').sum().sort_values('words_count').words_count.\
+        iloc[-1]) + ' (' + str(df[df.user == user].resample('d').sum().\
+        sort_values('words_count').words_count.index[-1])[:10] + ')' for user in users
     }
+    
+    most_messages = {
+        user : str(df[df.user == user].resample('d').count().sort_values('message').message.\
+        iloc[-1]) + ' (' + str(df[df.user == user].resample('d').count().\
+        sort_values('message').index[-1])[:10] + ')' for user in users
+    }
+    
+    #Creating the dataframes before concatenating
+    df1 = pd.DataFrame(most_words.values(), index=users)
+    df1.columns = ['Most words']
+    df2 = pd.DataFrame(most_messages.values(), index=users)
+    df2.columns = ['Most messages']
+    
+    df = pd.concat([df1,df2], axis=1)
 
+    return df
+
+
+def emojis_used(df):
+    users = df.user.unique()
+    
+    emojis_user = {
+         user: df[df.user == user].sum().emoji_count for user in users
+    }
+        
+    df = pd.DataFrame(emojis_user.values(), index=users)
+    df.columns = ['Total emojis used']
+    
+    return df
+
+
+def statistics_users(df):
+    
+    return pd.concat(
+                        [number_msgs(df),
+                         longest_word_user(df),
+                         most_words(df),
+                         emojis_used(df)],
+                         axis=1).transpose()
+    
