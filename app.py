@@ -5,7 +5,7 @@ from charts import *
 
 
 # Import chat
-chat = create_chat_list()
+chat = create_chat_list('./data/chat_jgm.txt')
 chat = clean_chat_list(chat)
 
 # Create df
@@ -16,25 +16,6 @@ df = chat_to_df(chat)
 # as of 28/07 we are having issues with this 
 # distribution_day = message_distribution_plot(df,'day')
 
-
-# Web app:
-
-# Comments and interesting links
-
-st.title('_WhatsCeption_ - My first webapp :sunglasses:') # Underscore to denote curvy words
-
-'# SITE TO DEPLOY https://towardsdatascience.com/quickly-build-and-deploy-an-application-with-streamlit-988ca08c7e83'
-
-'### How to show matplot libcharts streamlit? Check this: https://docs.streamlit.io/en/stable/api.html#display-charts'
-
-'## Web scrape from (reddit, 4chan, etc.) and substitute them from your conversation with Nacho'
-
-'## Great post that covers deployment with Heroku: https://towardsdatascience.com/quickly-build-and-deploy-an-application-with-streamlit-988ca08c7e83'
-
-'## Linking heroku app with domain: https://medium.com/@imranhsayed/adding-your-custom-domain-to-heroku-app-cdd68d2db67f'
-
-'If instead you want to plot graphs from libraries like Matplotlib, altair, pyplot check: '
-'https://docs.streamlit.io/en/stable/api.html#display-charts'
 
 # Actual app
 
@@ -49,6 +30,8 @@ Enjoy!
 
 # I HAVE DEACTIVATED THE FILE UPLOADER BUT THIS IS SOMETHING THAT I WANT TO USE
 st.file_uploader('Import the txt file of your Whatsapp conversation')
+
+'## *Disclaimer* no conversations are getting stored, you can check out the source of the project at:'
 
 
 if st.button('CLICK HERE TO GENERATE STATISTICS'):
@@ -79,6 +62,12 @@ statistics_users(df))
 
 
 ## Plots and graphs
+
+#Create some buttons or something that would give you a heatmap by hour and day for a selected month and year
+# 2018 - Novemenber
+# sns.heatmap( x = day, y = hour, data= value count of number of messages)
+
+"#Create some buttons or something that would give you a heatmap by hour and day for a selected month and year"
 
 from charts import *
 import seaborn as sns
